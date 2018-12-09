@@ -82,3 +82,6 @@ data_chem = data_chem[data_chem.STATUS!=' ']
 print(set(data_chem.STATUS),data_chem.shape[0])
 with open('clean_data_v2.pkl','wb') as fw :
     pickle.dump(data_chem,fw)
+#%% 標準化
+for key in data_chem.columns[:-1] :
+    data_chem[key] = (data_chem[key]-data_chem[key].mean())/(data_chem[key].var()**.5)
