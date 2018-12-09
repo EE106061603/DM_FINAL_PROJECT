@@ -5,8 +5,8 @@ import re, os
 import pickle
 r = glob('./Data/*.csv')
 file = [  os.path.basename(i) for i in r ]
-data_othe = pd.read_excel('交通36_人口36_所得3.xlsx',header=None)
-data_coun = pd.read_excel('Country_ID.xlsx')
+data_othe = pd.read_excel('./Data/交通36_人口36_所得3.xlsx',header=None)
+data_coun = pd.read_excel('./Data/Country_ID.xlsx')
 #%%
 def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     d = pd.read_csv(path, encoding ='ansi',keep_default_na=True)
