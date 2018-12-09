@@ -3,11 +3,6 @@ import pandas as pd
 from glob import glob
 import re, os
 import pickle
-r = glob('./Data/*.csv')
-file = [  os.path.basename(i) for i in r ]
-data_othe = pd.read_excel('交通36_人口36_所得3.xlsx',header=None)
-data_coun = pd.read_excel('Country_ID.xlsx')
-#%%
 def add_data ( target, other, key_name, no_month=False ) :
     d = []
     for x,y in zip(target.Date,target.COUNTYID) :
@@ -31,7 +26,7 @@ def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     data_chem['Date'] = data_chem.DATACREATIONDATE.apply(lambda x: chem_data_transform(x))
     country_dict = { x[0]:x[1] for x in data_coun.values.tolist()}
     data_chem['Country'] = data_chem.COUNTYID.apply(lambda x: country_dict[x])
-    #%% Processing of population, motocycles and money data
+    # Processing of population, motocycles and money data
     country_inverse_dict = { x[1]:x[0] for x in data_coun.values.tolist() }
     data_othe['CountryID'] = data_othe[0].apply(lambda x: country_inverse_dict[x] )
     data_othe = data_othe.drop(columns=0)
@@ -48,7 +43,7 @@ def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     data_population = pd.DataFrame.from_dict(other_population,orient='index',columns=info_population)
     data_moto = pd.DataFrame.from_dict(other_moto,orient='index',columns=info_moto)
     data_money = pd.DataFrame.from_dict(other_money,orient='index',columns=info_money)
-    #%% Add population, motocycles and money data to polution data
+    # Add population, motocycles and money data to polution data
     data_chem = add_data(data_chem,data_population,'人口')
     data_chem = add_data(data_chem,data_moto,'機車')
     data_chem = add_data(data_chem,data_money,'收入',True)
@@ -64,10 +59,16 @@ def combine_all ( path , operation=pd_clean ) :
     data = data + data_new
     data_all = pd.concat(data)
     return data_all
+#%% Read data
+r = glob('./Data/*.csv')
+file = [  os.path.basename(i) for i in r ]
+data_othe = pd.read_excel('./Data/交通36_人口36_所得3.xlsx',header=None)
+data_coun = pd.read_excel('./Data/Country_ID.xlsx')
+#%% Combine all with simple data processing
 data_all = combine_all(r)
 with open('clean_data.pkl','wb') as fw :
     pickle.dump(data_all,fw)
-#%%
+#%% 標籤處理
 with open('clean_data.pkl','rb') as fr :
     data_chem = pickle.load(fr)
 print(set(data_chem.STATUS),data_chem.shape[0])
