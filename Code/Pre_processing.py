@@ -13,7 +13,11 @@ def add_data ( target, other, key_name, no_month=False ) :
             d.append(None)
     target[key_name] = d
     return target
-def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
+data_othe = pd.read_excel('./Data/交通36_人口36_所得3.xlsx',header=None)
+data_coun = pd.read_excel('./Data/Country_ID.xlsx')
+country_dict = { x[0]:x[1] for x in data_coun.values.tolist()}
+country_inverse_dict = { x[1]:x[0] for x in data_coun.values.tolist() }
+def pd_clean ( path, data_othe=data_othe, data_coun=data_coun, country_dict=country_dict, country_inverse_dict=country_inverse_dict ) :
     d = pd.read_csv(path, encoding ='ansi',keep_default_na=True)
     useful = d[['COUNTYID','STATUS','SO2','CO','O3','PM10','PM25','NO2','WINDSPEED','WINDDIREC','DATACREATIONDATE']]
     print(os.path.basename(path)+' with length',d.shape[0],end=' ')
@@ -24,10 +28,8 @@ def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
         year_month = re.findall('\d+',string)[-2:][::-1]
         return year_month[0][0]+'0'+str(int(year_month[0][1])-1)+'-'+year_month[1]
     data_chem['Date'] = data_chem.DATACREATIONDATE.apply(lambda x: chem_data_transform(x))
-    country_dict = { x[0]:x[1] for x in data_coun.values.tolist()}
     data_chem['Country'] = data_chem.COUNTYID.apply(lambda x: country_dict[x])
     # Processing of population, motocycles and money data
-    country_inverse_dict = { x[1]:x[0] for x in data_coun.values.tolist() }
     data_othe['CountryID'] = data_othe[0].apply(lambda x: country_inverse_dict[x] )
     data_othe = data_othe.drop(columns=0)
     other=data_othe.values.tolist()
@@ -44,14 +46,14 @@ def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     data_moto = pd.DataFrame.from_dict(other_moto,orient='index',columns=info_moto)
     data_money = pd.DataFrame.from_dict(other_money,orient='index',columns=info_money)
     # Add population, motocycles and money data to polution data
-    data_chem = add_data(data_chem,data_population,'人口')
-    data_chem = add_data(data_chem,data_moto,'機車')
-    data_chem = add_data(data_chem,data_money,'收入',True)
+    data_chem = add_data(data_chem,data_population,'Population')
+    data_chem = add_data(data_chem,data_moto,'Veichle')
+    data_chem = add_data(data_chem,data_money,'Income',True)
     # Clean data
     data_chem = data_chem.dropna()
     print(data_chem.shape[0])
     data_chem = data_chem[['COUNTYID', 'SO2', 'CO', 'O3', 'PM10', 'PM25', 'NO2',
-           'WINDSPEED', 'WINDDIREC', '人口', '機車', '收入', 'STATUS']]
+           'WINDSPEED', 'WINDDIREC', 'Population', 'Veichle', 'Income', 'STATUS']]
     return data_chem
 def combine_all ( path , operation=pd_clean ) :
     data = [ operation(path[0]) ]
@@ -62,8 +64,6 @@ def combine_all ( path , operation=pd_clean ) :
 #%% Read data
 r = glob('./Data/*.csv')
 file = [  os.path.basename(i) for i in r ]
-data_othe = pd.read_excel('./Data/交通36_人口36_所得3.xlsx',header=None)
-data_coun = pd.read_excel('./Data/Country_ID.xlsx')
 #%% Combine all with simple data processing
 data_all = combine_all(r)
 with open('clean_data.pkl','wb') as fw :
