@@ -5,9 +5,19 @@ import re, os
 import pickle
 r = glob('./Data/*.csv')
 file = [  os.path.basename(i) for i in r ]
-data_othe = pd.read_excel('./Data/交通36_人口36_所得3.xlsx',header=None)
-data_coun = pd.read_excel('./Data/Country_ID.xlsx')
+data_othe = pd.read_excel('交通36_人口36_所得3.xlsx',header=None)
+data_coun = pd.read_excel('Country_ID.xlsx')
 #%%
+def add_data ( target, other, key_name, no_month=False ) :
+    d = []
+    for x,y in zip(target.Date,target.COUNTYID) :
+        try :
+            if no_month : d.append(other[x[:3]][y])
+            else : d.append(other[x][y])
+        except :
+            d.append(None)
+    target[key_name] = d
+    return target
 def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     d = pd.read_csv(path, encoding ='ansi',keep_default_na=True)
     useful = d[['COUNTYID','STATUS','SO2','CO','O3','PM10','PM25','NO2','WINDSPEED','WINDDIREC','DATACREATIONDATE']]
@@ -39,16 +49,6 @@ def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     data_moto = pd.DataFrame.from_dict(other_moto,orient='index',columns=info_moto)
     data_money = pd.DataFrame.from_dict(other_money,orient='index',columns=info_money)
     #%% Add population, motocycles and money data to polution data
-    def add_data ( target, other, key_name, no_month=False ) :
-        d = []
-        for x,y in zip(target.Date,target.COUNTYID) :
-            try :
-                if no_month : d.append(other[x[:3]][y])
-                else : d.append(other[x][y])
-            except :
-                d.append(None)
-        target[key_name] = d
-        return target
     data_chem = add_data(data_chem,data_population,'人口')
     data_chem = add_data(data_chem,data_moto,'機車')
     data_chem = add_data(data_chem,data_money,'收入',True)
@@ -57,13 +57,6 @@ def pd_clean ( path, data_othe=data_othe, data_coun=data_coun ) :
     print(data_chem.shape[0])
     data_chem = data_chem[['COUNTYID', 'SO2', 'CO', 'O3', 'PM10', 'PM25', 'NO2',
            'WINDSPEED', 'WINDDIREC', '人口', '機車', '收入', 'STATUS']]
-    data_chem = data_chem.STATUS.replace('非常不健康','非常不良')
-    data_chem = data_chem.STATUS.replace('對所有族群不健康','非常不良')
-    data_chem = data_chem.STATUS.replace('對所有族群不良','不良')
-    data_chem = data_chem.STATUS.replace('危害','非常不良')
-    data_chem = data_chem.STATUS.replace('有害','不良')
-    data_chem = data_chem.STATUS.replace('設備維護',' ')
-    data_chem = data_chem[data_chem.STATUS!=' ']
     return data_chem
 def combine_all ( path , operation=pd_clean ) :
     data = [ operation(path[0]) ]
@@ -74,3 +67,17 @@ def combine_all ( path , operation=pd_clean ) :
 data_all = combine_all(r)
 with open('clean_data.pkl','wb') as fw :
     pickle.dump(data_all,fw)
+#%%
+with open('clean_data.pkl','rb') as fr :
+    data_chem = pickle.load(fr)
+print(set(data_chem.STATUS),data_chem.shape[0])
+data_chem = data_chem.replace('非常不健康','非常不良')
+data_chem = data_chem.replace('對所有族群不健康','非常不良')
+data_chem = data_chem.replace('對所有族群不良','不良')
+data_chem = data_chem.replace('危害','非常不良')
+data_chem = data_chem.replace('有害','不良')
+data_chem = data_chem.replace('設備維護',' ')
+data_chem = data_chem[data_chem.STATUS!=' ']
+print(set(data_chem.STATUS),data_chem.shape[0])
+with open('clean_data_v2.pkl','wb') as fw :
+    pickle.dump(data_chem,fw)
